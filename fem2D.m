@@ -11,37 +11,64 @@ video = [];
 switch(scene)
 	case 0
 		nTiles = 1; % Number of tiles in x and y
-		dt = 1e-2; % time step
+        initTris(nTiles); % Create triangles from regular grid of nodes
+        
+        side = false; % Is a side pinned? true = top or bottom pinned.
+        less = false; % Pin nodes above or below threshold.
+        threshold = 0.9; % Threshold for which nodes to pin.
+        pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
+
+		dt = 1e-3; % time step
 		tEnd = 1.0; % end time
-		drawHz = 10; % refresh rate
+		drawHz = 100; % refresh rate
 		grav = [0 -9.81]'; % gravity
 		rho = 1e0; % area density
 		damping = 2.0; % viscous damping
 		E = 1e2; % Young's modulus
 		nu = 0.4; % Poisson's ratio
 	case 1
-        nTiles = 2; % Number of tiles in x and y
-		dt = 1e-2; % time step
-		tEnd = 1.0; % end time
-		drawHz = 10; % refresh rate
+        %nTiles = 1; % Number of tiles in x and y
+        %nTiles = 2;
+        %nTiles = 4;
+        nTiles = 8;
+        initTris(nTiles); % Create triangles from regular grid of nodes
+        
+        side = false; % Is a side pinned? true = top or bottom pinned.
+        less = true;
+        threshold = -0.9; % Threshold for which nodes to pin.
+        pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
+        
+		dt = 1e-3; % time step
+		tEnd = 2.0; % end time
+		drawHz = 100; % refresh rate
 		grav = [0 -9.81]'; % gravity
-		rho = 1e0; % area density
-		damping = 2.0; % viscous damping
-		E = 1e2; % Young's modulus
-		nu = 0.4; % Poisson's ratio
+		rho = 5e0; % area density
+		damping = 1.0; % viscous damping
+		E = 1e3; % Young's modulus
+		nu = 0.0; % Poisson's ratio
     case 2
-        nTiles = 1; % Number of tiles in x and y
-		dt = 1e-2; % time step
-		tEnd = 1.0; % end time
-		drawHz = 10; % refresh rate
+        % 8x8 with top nodes fixed while reaching roughly y = -1.5
+        nTiles = 8; % Number of tiles in x and y
+        initTris(nTiles); % Create triangles from regular grid of nodes
+        
+        side = false; % Is a side pinned? true = top or bottom pinned.
+        less = false;
+        threshold = 0.9; % Threshold for which nodes to pin.
+        pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
+        
+		dt = 1e-3; % time step
+		tEnd = 2.0; % end time
+		drawHz = 100; % refresh rate
 		grav = [0 -9.81]'; % gravity
-		rho = 1e0; % area density
-		damping = 2.0; % viscous damping
-		E = 1e2; % Young's modulus
-		nu = 0.4; % Poisson's ratio
+		rho = 5e0; % area density
+		damping = 1.0; % viscous damping
+		E = 1e3; % Young's modulus
+		nu = 0.0; % Poisson's ratio
     case 3
         % 
         nTiles = 1; % Number of tiles in x and y
+        initTris(nTiles); % Create triangles from regular grid of nodes
+        
 		dt = 1e-2; % time step
 		tEnd = 1.0; % end time
 		drawHz = 10; % refresh rate
@@ -53,6 +80,8 @@ switch(scene)
     case 4
         % 8x8 with left nodes fixed
         nTiles = 1; % Number of tiles in x and y
+        initTris(nTiles); % Create triangles from regular grid of nodes
+        
 		dt = 1e-2; % time step
 		tEnd = 1.0; % end time
 		drawHz = 10; % refresh rate
@@ -64,6 +93,8 @@ switch(scene)
     case 5
         % 8x8 with different subset of nodes pinned
         nTiles = 1; % Number of tiles in x and y
+        initTris(nTiles); % Create triangles from regular grid of nodes
+        
 		dt = 1e-2; % time step
 		tEnd = 1.0; % end time
 		drawHz = 10; % refresh rate
@@ -75,34 +106,68 @@ switch(scene)
     case 6 
         % Extra Credit
         nTiles = 1; % Number of tiles in x and y
-		dt = 1e-2; % time step
-		tEnd = 1.0; % end time
-		drawHz = 10; % refresh rate
-		grav = [0 -9.81]'; % gravity
-		rho = 1e0; % area density
-		damping = 2.0; % viscous damping
-		E = 1e2; % Young's modulus
-		nu = 0.4; % Poisson's ratio
+        initTris(nTiles); % Create triangles from regular grid of nodes
+        
+        
+        dt = 1e-3; % time step
+        tEnd = 5.0; % end time
+        drawHz = 100; % refresh rate
+        grav = [0 -10]'; % gravity
+        rho = 5e0; % area density
+        damping = 0.0; % viscous damping
+        E = 10000; % Young's modulus
+        nu = -0.0; % Poisson's ratio
 end
 
 % Convert to lambda and mu
 lambda = (E*nu)/((1 + nu)*(1 -2*nu));
 mu = E/(2*(1 + nu));
 
-% Creates triangles from a regular grid of nodes
-[nodes,tris] = createSquare(nTiles);
-nNodes = length(nodes);
-nTris = length(tris);
-
-% Find some nodes to fix
-for k = 1 : nNodes
-	if nodes(k).X(2) < 0.9
-		nodes(k).fixed = true;
-	else
-		nodes(k).fixed = false;
-	end
+function initTris(nTiles)
+    % Creates triangles from a regular grid of nodes
+    [nodes,tris] = createSquare(nTiles);
+    nNodes = length(nodes);
+    nTris = length(tris);
 end
+        
+% % Find some nodes to fix
+% for k = 1 : nNodes
+% 	if nodes(k).X(2) > 0.9
+% 		nodes(k).fixed = true;
+% 	else
+% 		nodes(k).fixed = false;
+% 	end
+% end
 
+function pinNodes(side,less,threshold)
+    if ~less
+        for k = 1 : nNodes
+            if ~side
+                target = nodes(k).X(2);
+            else
+                target = nodes(k).X(1);
+            end
+            if target > threshold
+                nodes(k).fixed = true;
+            else
+                nodes(k).fixed = false;
+            end
+        end
+    else
+        for k = 1 : nNodes
+            if ~side
+                target = nodes(k).X(2);
+            else
+                target = nodes(k).X(1);
+            end
+            if target < threshold
+                nodes(k).fixed = true;
+            else
+                nodes(k).fixed = false;
+            end
+        end
+    end
+end
 % Compute triangle mass and distribute to vertices
 for k = 1 : nTris
 	tri = tris(k).nodes;
@@ -155,7 +220,7 @@ for t = 0 : dt : tEnd;
         % Calculate Piola Kirchoff Stress
         P = F*(2*mu*gs + lambda*trace(gs)*eye(2));
         
-        % True stress
+        % Calculate and assign true stress
         tris(k).stress = P*F/det(F);
         
         % Calculate edge vectors
@@ -191,12 +256,6 @@ for t = 0 : dt : tEnd;
         nodes(triNodes(1)).f = nodes(triNodes(1)).f + Fab/2 + Fca/2;
         nodes(triNodes(2)).f = nodes(triNodes(2)).f + Fab/2 + Fbc/2;
         nodes(triNodes(3)).f = nodes(triNodes(3)).f + Fbc/2 + Fca/2;
-        
-         
-        
-        
-        
-        
     end
 	
 	% Integrate velocity and position
