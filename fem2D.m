@@ -10,6 +10,7 @@ video = [];
 
 switch(scene)
 	case 0
+        uniform = true; % Is triangle stiffness uniform throughout?
 		nTiles = 1; % Number of tiles in x and y
         initTris(nTiles); % Create triangles from regular grid of nodes
         
@@ -27,10 +28,11 @@ switch(scene)
 		E = 1e2; % Young's modulus
 		nu = 0.4; % Poisson's ratio
 	case 1
-        %nTiles = 1; % Number of tiles in x and y
-        %nTiles = 2;
-        %nTiles = 4;
-        nTiles = 8;
+        uniform = true; % Is triangle stiffness uniform throughout?
+%         nTiles = 1; % Number of tiles in x and y
+%         nTiles = 2;
+        nTiles = 4;
+        %nTiles = 8;
         initTris(nTiles); % Create triangles from regular grid of nodes
         
         side = false; % Is a side pinned? true = top or bottom pinned.
@@ -48,6 +50,7 @@ switch(scene)
 		nu = 0.0; % Poisson's ratio
     case 2
         % 8x8 with top nodes fixed while reaching roughly y = -1.5
+        uniform = true; % Is triangle stiffness uniform throughout?
         nTiles = 8; % Number of tiles in x and y
         initTris(nTiles); % Create triangles from regular grid of nodes
         
@@ -57,52 +60,104 @@ switch(scene)
         pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
         
 		dt = 1e-3; % time step
-		tEnd = 2.0; % end time
+		tEnd = 1.0; % end time
 		drawHz = 100; % refresh rate
 		grav = [0 -9.81]'; % gravity
-		rho = 5e0; % area density
-		damping = 1.0; % viscous damping
-		E = 1e3; % Young's modulus
-		nu = 0.0; % Poisson's ratio
+		rho = 1e0; % area density
+		damping = 2.0; % viscous damping
+		E = .3e2; % Young's modulus
+		nu = 0.4; % Poisson's ratio
     case 3
-        % 
-        nTiles = 1; % Number of tiles in x and y
+        % 8x8 with top nodes fixed while reaching roughly y = -1.5 with two
+        % different values for the Poisson ratio
+        uniform = true; % Is triangle stiffness uniform throughout?
+        nTiles = 8; % Number of tiles in x and y
         initTris(nTiles); % Create triangles from regular grid of nodes
         
-		dt = 1e-2; % time step
+        side = false; % Is a side pinned? true = top or bottom pinned.
+        less = false;
+        threshold = 0.9; % Threshold for which nodes to pin.
+        pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
+        
+		dt = 1e-3; % time step
 		tEnd = 1.0; % end time
-		drawHz = 10; % refresh rate
+		drawHz = 100; % refresh rate
 		grav = [0 -9.81]'; % gravity
 		rho = 1e0; % area density
 		damping = 2.0; % viscous damping
-		E = 1e2; % Young's modulus
-		nu = 0.4; % Poisson's ratio
+		E = .3e2; % Young's modulus
+		nu = -0.4; % Poisson's ratio. Negative ratio causes mesh to expand in width when stretched.
+%         nu = 0.3; % Poisson's ratio 2. Lowering the value from .4 causes the mesh to stretch further without thinning out as much.
     case 4
         % 8x8 with left nodes fixed
-        nTiles = 1; % Number of tiles in x and y
+        uniform = true; % Is triangle stiffness uniform throughout?
+        nTiles = 8; % Number of tiles in x and y
         initTris(nTiles); % Create triangles from regular grid of nodes
         
-		dt = 1e-2; % time step
+        side = true; % Is a side pinned? true = top or bottom pinned.
+        less = true;
+        threshold = -0.9; % Threshold for which nodes to pin.
+        pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
+        
+		dt = 1e-3; % time step
 		tEnd = 1.0; % end time
-		drawHz = 10; % refresh rate
+		drawHz = 100; % refresh rate
 		grav = [0 -9.81]'; % gravity
-		rho = 1e0; % area density
+		rho = 11e-2; % area density
 		damping = 2.0; % viscous damping
 		E = 1e2; % Young's modulus
-		nu = 0.4; % Poisson's ratio
+		nu = -0.4; % Poisson's ratio
     case 5
-        % 8x8 with different subset of nodes pinned
-        nTiles = 1; % Number of tiles in x and y
+        % 8x8 with different subset of nodes pinned and non uniform
+        % stiffness
+        uniform = false; % Is triangle stiffness uniform throughout?
+        nTiles = 8; % Number of tiles in x and y
         initTris(nTiles); % Create triangles from regular grid of nodes
         
-		dt = 1e-2; % time step
+%         % Pin top nodes and left nodes
+%         % Pin top nodes
+% 		side = false; % Is a side pinned? true = top or bottom pinned.
+%         less = false;
+%         threshold = 0.9; % Threshold for which nodes to pin.
+%         pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
+%         % Pin left nodes
+%         for k = 1 : nNodes
+%             if nodes(k).X(1) < -0.9
+%                 nodes(k).fixed = true;
+%             end
+%         end
+        
+%         % Pin left and right nodes
+%         % Pin left nodes
+%         side = true; % Is a side pinned? true = top or bottom pinned.
+%         less = true;
+%         threshold = -0.9; % Threshold for which nodes to pin.
+%         pinNodes(side,less,threshold); % Pin appropriate nodes for scene.
+%         % Pin right nodes
+%         for k = 1 : nNodes
+%             if nodes(k).X(1) > 0.9
+%                 nodes(k).fixed = true;
+%             end
+%         end
+        
+        %Pin nodes along line y=x
+        for k = 1 : nNodes
+            if nodes(k).X(1) == nodes(k).X(2)
+                nodes(k).fixed = true;
+            else
+                nodes(k).fixed = false;
+            end
+        end
+        
+        
+		dt = 1e-3; % time step
 		tEnd = 1.0; % end time
-		drawHz = 10; % refresh rate
+		drawHz = 100; % refresh rate
 		grav = [0 -9.81]'; % gravity
-		rho = 1e0; % area density
+		rho = 15e-1; % area density
 		damping = 2.0; % viscous damping
 		E = 1e2; % Young's modulus
-		nu = 0.4; % Poisson's ratio
+		nu = -0.4; % Poisson's ratio
     case 6 
         % Extra Credit
         nTiles = 1; % Number of tiles in x and y
@@ -120,8 +175,8 @@ switch(scene)
 end
 
 % Convert to lambda and mu
-lambda = (E*nu)/((1 + nu)*(1 -2*nu));
-mu = E/(2*(1 + nu));
+% lambda = (E*nu)/((1 + nu)*(1 -2*nu));
+% mu = E/(2*(1 + nu));
 
 function initTris(nTiles)
     % Creates triangles from a regular grid of nodes
@@ -183,6 +238,22 @@ for k = 1 : nTris
         Xb(1)-Xa(1)  Xc(1)-Xa(1)
         Xb(2)-Xa(2)  Xc(2)-Xa(2)
         ]);
+    
+    % Rand to get either 1 or 2. 1 -> triangle gets alternate
+    % stiffness, 2-> keep original stiffness.
+    if ~uniform
+        r = randi(2);
+        if r == 1
+            newE = 2e2; % triangle is assigned new stiffness
+        else
+            newE = E;
+        end
+    else
+        newE = E;
+    end
+    
+    tris(k).E = newE;
+    
 end
 
 % Simulation loop
@@ -200,7 +271,6 @@ for t = 0 : dt : tEnd;
 	end
 	
 	% FEM force
-	% ### TODO ###
     for k = 1 : nTris
         
         triNodes = tris(k).nodes;
@@ -213,11 +283,16 @@ for t = 0 : dt : tEnd;
             xb(1)-xa(1)  xc(1)-xa(1)
             xb(2)-xa(2)  xc(2)-xa(2)
         ] * tris(k).defInv;
-        
+           
         % Calculate Green Strain
         gs = .5*(F.'*F - eye(2));
         
+        % Calculate Lambda and Mu
+        lambda = (tris(k).E*nu)/((1 + nu)*(1 -2*nu));
+        mu = tris(k).E/(2*(1 + nu));
+        
         % Calculate Piola Kirchoff Stress
+        
         P = F*(2*mu*gs + lambda*trace(gs)*eye(2));
         
         % Calculate and assign true stress
